@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { loadConfig, validateConfig, config } from "./config.js";
 import { openDb, closeDb } from "./db.js";
 import { ensureAdmin } from "./auth.js";
+import { runBootstrap } from "./bootstrap.js";
 import { createApp } from "./app.js";
 import { startScheduler, stopScheduler, schedulerIdle } from "./engine/scheduler.js";
 import { startSync, stopSync } from "./engine/sync.js";
@@ -37,6 +38,7 @@ if (problems.length) {
 mkdirSync(config.dataDir, { recursive: true });
 openDb(join(config.dataDir, "coldmail.db"));
 if (ensureAdmin()) console.log(`Administrator ${config.adminEmail} angelegt.`);
+if (process.env.BOOTSTRAP_JSON) runBootstrap(process.env.BOOTSTRAP_JSON).catch(err => console.error(`BOOTSTRAP fehlgeschlagen: ${err.message}`));
 
 const server = createApp();
 server.requestTimeout = 5 * 60 * 1000;
