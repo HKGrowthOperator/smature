@@ -29,6 +29,8 @@ docker compose up -d   # App läuft auf Port 3000 – HTTPS über einen Reverse 
 
 ## Nach dem ersten Login
 
+**Alle Felder zum Ausfüllen stehen in [VORLAGEN.md](VORLAGEN.md).**
+
 1. **Einstellungen → Allgemein:** Firmenname, Impressum/Pflichtangaben (Fußzeile), Link zur Datenschutzerklärung.
 2. **Einrichtung:** Versand-Domains bzw. Hauptdomain, Postfächer verbinden, Warmup.
 3. **Projekte:** Die vier Spalten (Webseite, Software Sales App, Software Mittelstand, Webseite / Automation) sind nur Beispiele – umbenennen, löschen oder eigene anlegen.
