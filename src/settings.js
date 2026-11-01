@@ -55,7 +55,8 @@ export const DEFAULT_SETTINGS = {
   // Tages-Autopilot: Kapazität aller Postfächer auf die Autopilot-Kampagnen der Projekte verteilen (Folge-Mails zuerst,
   // dann Erst-Mails nach Anteil), Pools automatisch nachfüllen, nie angeschriebene alte Pool-Leads aufräumen.
   autopilot_enabled: false,
-  autopilot_shares: {}, // { projectId: Gewicht } – Standard 1 je Projekt (gleich verteilt)
+  autopilot_shares: {},
+  autopilot_categories: {}, // { projectId: ["galabau", …] } – Kategorien für automatische Leadquellen-Läufe je Projekt // { projectId: Gewicht } – Standard 1 je Projekt (gleich verteilt)
   autopilot_buffer_days: 7, // Pool soll so viele Versandtage an Erst-Mails vorrätig haben
   autopilot_lead_max_age_days: 60, // nie angeschriebene Pool-Leads, die älter sind, werden gelöscht
   autopilot_refill: true,

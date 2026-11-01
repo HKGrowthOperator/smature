@@ -136,3 +136,14 @@ test("Autopilot-Takt räumt einmal am Tag auf und macht ohne Schalter nichts", (
   assert.ok(first.cleanup, "erster Takt des Tages räumt auf");
   assert.equal(runAutopilotTick().cleanup, null, "zweiter Takt am selben Tag nicht");
 });
+
+test("Pool nachfüllen: Kategorien je Projekt (z. B. nur GaLaBau)", () => {
+  const boxes = [makeMailbox({ daily_limit: 40 })];
+  const { pid } = autopilotProject("GaLaBau-Test", boxes, { newLeads: 20 });
+  saveSettings({ autopilot_categories: { [String(pid)]: ["galabau", "gibt-es-nicht"] } });
+  const started = refillPools(planDay()).filter(s => s.project_id === pid);
+  assert.equal(started.length, 1);
+  const run = q.get("SELECT * FROM sourcing_runs WHERE id = ?", started[0].run_id);
+  assert.deepEqual(JSON.parse(run.categories), ["galabau"]);
+  saveSettings({ autopilot_categories: {} });
+});

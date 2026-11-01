@@ -15,7 +15,7 @@ import { effectiveDailyLimit, sentTodayByMailbox, mainSendingDomain, mailboxDoma
 import { approvalState } from "./rules.js";
 import { loadSteps } from "../mail/compose.js";
 import { listProjects } from "../intel/projects.js";
-import { PROFILES, profileFor, poolList, createRun } from "../intel/sourcing.js";
+import { PROFILES, CATEGORIES, profileFor, poolList, createRun } from "../intel/sourcing.js";
 import { deleteLeadCompletely } from "../api/leads.js";
 import { recordEvent } from "../events.js";
 
@@ -183,7 +183,10 @@ export function refillPools(plan = planDay(), now = Date.now()) {
     // Erfahrungsgemäß landet etwa jede vierte geprüfte Firma im Pool.
     const max = clampInt(deficit * 4, 100, 3000);
     const profile = PROFILES[p.profile] ? p.profile : "website";
-    const run = createRun({ project_id: p.project_id, profile, regions: rotated, categories: PROFILES[profile].categories, max_candidates: max });
+    // Kategorien je Projekt (Einstellung autopilot_categories, z. B. nur GaLaBau) – sonst alle Kategorien des Profils.
+    const own = (s.autopilot_categories || {})[String(p.project_id)];
+    const categories = Array.isArray(own) && own.filter(k => CATEGORIES[k]).length ? own.filter(k => CATEGORIES[k]) : PROFILES[profile].categories;
+    const run = createRun({ project_id: p.project_id, profile, regions: rotated, categories, max_candidates: max });
     q.run("UPDATE sourcing_runs SET auto = 1 WHERE id = ?", run.id);
     recordEvent("autopilot_refill", { data: { project_id: p.project_id, run_id: run.id, stock: p.pool_stock, target: p.pool_target, max_candidates: max } });
     started.push({ project_id: p.project_id, project: p.project, run_id: run.id, max_candidates: max, stock: p.pool_stock, target: p.pool_target });

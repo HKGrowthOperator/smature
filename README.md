@@ -29,7 +29,7 @@ docker compose up -d   # App läuft auf Port 3000 – HTTPS über einen Reverse 
 
 ## Nach dem ersten Login
 
-**Alle Felder zum Ausfüllen stehen in [VORLAGEN.md](VORLAGEN.md).**
+**Alle Felder zum Ausfüllen stehen in [VORLAGEN.md](VORLAGEN.md). Übergabe und Automatisierung: [UEBERGABE_CHRISTIAN.md](UEBERGABE_CHRISTIAN.md).**
 
 1. **Einstellungen → Allgemein:** Firmenname, Impressum/Pflichtangaben (Fußzeile), Link zur Datenschutzerklärung.
 2. **Einrichtung:** Versand-Domains bzw. Hauptdomain, Postfächer verbinden, Warmup.

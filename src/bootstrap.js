@@ -37,6 +37,14 @@ export async function runBootstrap(raw, log = console.log) {
   // Weitere Einstellungen (nur diese Schlüssel): Regionen der Leadquellen, Prüf-Limit, Adressen bilden.
   const ALLOWED = ["sourcing_regions", "sourcing_daily_limit", "guess_chief_emails", "skip_freemail_cold"];
   for (const k of ALLOWED) if (cfg.settings && cfg.settings[k] !== undefined) patch[k] = cfg.settings[k];
+  if (cfg.autopilot_categories && typeof cfg.autopilot_categories === "object") {
+    const map = { ...(getSettings().autopilot_categories || {}) };
+    for (const [name, cats] of Object.entries(cfg.autopilot_categories)) {
+      const p = q.get("SELECT id FROM projects WHERE name = ?", name);
+      if (p && Array.isArray(cats)) map[String(p.id)] = cats;
+    }
+    patch.autopilot_categories = map;
+  }
   if (Object.keys(patch).length) { saveSettings(patch); report.settings = Object.keys(patch); }
 
   for (const slug of cfg.remove_projects || []) {

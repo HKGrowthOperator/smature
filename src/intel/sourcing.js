@@ -20,6 +20,7 @@ import { leadCase } from "../lib/cases.js";
 // Kategorien = OpenStreetMap-Tag-Filter (Overpass-Syntax). Ein Eintrag kann mehrere Filter bündeln.
 export const CATEGORIES = {
   craft_all: { label: "Handwerk (alle Gewerke)", filters: ['["craft"]'] },
+  galabau: { label: "Garten- und Landschaftsbau", filters: ['["craft"~"^(gardener|landscaper)$"]'] },
   craft_bau: { label: "Bau- und Ausbaugewerke", filters: ['["craft"~"^(roofer|carpenter|joiner|scaffolder|painter|plasterer|tiler|floorer|insulation|stonemason|builder|window_construction|glaziery|parquet_layer|dry_wall|rigger|gardener|landscaper)$"]'] },
   craft_technik: { label: "Elektro, SHK, Metall, Maschinen", filters: ['["craft"~"^(electrician|plumber|hvac|metal_construction|locksmith|blacksmith|welder|machinist|electronics_repair|sawmill|cabinet_maker|agricultural_engines|boatbuilder)$"]'] },
   industrial: { label: "Industrie und Produktion", filters: ['["industrial"]', '["man_made"="works"]'] },
