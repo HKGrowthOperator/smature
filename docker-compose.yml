@@ -1,0 +1,12 @@
+# Smature Coldmail – Start auf einem eigenen Server:  cp .env.example .env  (ausfüllen)  →  docker compose up -d
+services:
+  coldmail:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - coldmail-data:/app/data
+volumes:
+  coldmail-data:

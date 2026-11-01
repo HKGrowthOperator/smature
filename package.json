@@ -1,0 +1,30 @@
+{
+  "name": "coldmail",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Smature Coldmail – selbst gehostete Cold-E-Mail-App mit Postfach-Rotation, Sequenzen, Unibox, Warmup und KI-Personalisierung je Zielgruppe.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "APP_SECRET=local-dev-secret-local-dev-secret-123 ADMIN_EMAIL=admin@localhost.test ADMIN_PASSWORD=local-dev-password COOKIE_SECURE=false DATA_DIR=./data APP_URL=http://localhost:3000 node --disable-warning=ExperimentalWarning src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 \"tests/*.test.js\"",
+    "test:e2e": "E2E=1 node --disable-warning=ExperimentalWarning --test --test-concurrency=1 \"tests/e2e/*.test.js\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HKGrowthOperator/smature.git"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "imapflow": "^2.2.7",
+    "mailparser": "^3.9.36",
+    "nodemailer": "^10.0.15"
+  },
+  "devDependencies": {
+    "smtp-server": "^3.19.17"
+  }
+}
