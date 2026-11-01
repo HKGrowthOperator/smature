@@ -20,6 +20,7 @@ export function loadConfig(env = process.env) {
     adminEmail: (env.ADMIN_EMAIL || "").trim().toLowerCase(),
     adminPassword: env.ADMIN_PASSWORD || "",
     adminName: env.ADMIN_NAME || "Admin",
+    adminPasswordReset: bool(env.ADMIN_PASSWORD_RESET, false),
     cookieSecure: bool(env.COOKIE_SECURE, true),
     trustProxy: bool(env.TRUST_PROXY, false),
     anthropicKey: env.ANTHROPIC_API_KEY || "",

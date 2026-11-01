@@ -9,6 +9,15 @@ const SESSION_MS = 12 * 60 * 60 * 1000;
 
 export function ensureAdmin() {
   const count = q.value("SELECT COUNT(*) FROM users");
+  // ADMIN_PASSWORD_RESET=true: Passwort des Admins (ADMIN_EMAIL) beim Start auf ADMIN_PASSWORD setzen – danach Variable wieder entfernen.
+  if (count > 0 && config.adminPasswordReset && config.adminEmail && config.adminPassword.length >= 12) {
+    const res = q.run("UPDATE users SET password_hash = ? WHERE email = ?", hashPassword(config.adminPassword), config.adminEmail);
+    if (res.changes) {
+      q.run("DELETE FROM sessions WHERE user_id = (SELECT id FROM users WHERE email = ?)", config.adminEmail);
+      console.log(`Passwort für ${config.adminEmail} neu gesetzt (ADMIN_PASSWORD_RESET). Variable jetzt wieder entfernen.`);
+    }
+    return null;
+  }
   if (count > 0 || !config.adminEmail || !config.adminPassword) return null;
   const now = Date.now();
   return insert("users", { email: config.adminEmail, name: config.adminName, password_hash: hashPassword(config.adminPassword), role: "admin", created_at: now });
