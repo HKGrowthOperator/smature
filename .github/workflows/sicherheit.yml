@@ -1,0 +1,49 @@
+# Läuft bei jedem Push und Pull Request: blockiert Geheimnisse und Kundendaten im (öffentlichen) Repo, dann die Tests.
+name: Sicherheit & Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  geheimnisse:
+    name: Keine Schlüssel im Repo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks (Tokens, API-Keys, Passwörter)
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2 \
+            detect --source /repo --redact --verbose --config /repo/.gitleaks.toml
+
+  kundendaten:
+    name: Keine Leads / Datenbanken im Repo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verbotene Dateien suchen
+        run: |
+          bad=$(git ls-files | grep -Ei '\.(csv|tsv|xlsx|xls|db|sqlite|sqlite3|db-wal|db-shm)$|(^|/)\.env$|(^|/)data/|claude-inbox/' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::Diese Dateien gehören nicht in ein öffentliches Repo (Leads, Datenbank, .env):"
+            echo "$bad"
+            exit 1
+          fi
+          echo "Keine Kundendaten gefunden."
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test

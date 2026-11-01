@@ -6,3 +6,11 @@ data/
 .env
 .DS_Store
 coverage/
+# Kundendaten nie ins Repo (Repo ist öffentlich)
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.sqlite
+*.sqlite3
+claude-inbox/

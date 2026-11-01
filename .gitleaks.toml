@@ -1,0 +1,8 @@
+# Standardregeln von Gitleaks, plus Ausnahme für die erfundenen Test-Token in tests/.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Erfundene Werte in Tests und Platzhalter"
+paths = ['''^tests/''', '''package-lock\.json''']
+regexes = ['''local-dev-secret-local-dev-secret-123''', '''sk-ant-oat01-test-token''', '''sk-ant-api03-darf-nicht-raus''']
