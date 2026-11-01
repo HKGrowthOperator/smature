@@ -16,6 +16,12 @@ import { getMailbox } from "./mail/mailboxes.js";
 
 const slugify = s => String(s).toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "projekt";
 
+// Eine Stufe: entweder subject/body (eine Variante) oder variants: [{ subject, body }, …] für A/B-Tests.
+function stepVariants(s) {
+  const list = Array.isArray(s.variants) && s.variants.length ? s.variants : [{ subject: s.subject, body: s.body }];
+  return list.slice(0, 5).map((x, j) => ({ key: "ABCDE"[j], subject: x.subject || "", body: x.body || "", enabled: true }));
+}
+
 export async function runBootstrap(raw, log = console.log) {
   if (!raw) return null;
   let cfg;
@@ -80,7 +86,30 @@ export async function runBootstrap(raw, log = console.log) {
 
   // Produkt + Zielgruppe + Kampagne (Entwurf, NICHT freigegeben – Freigabe und Start bleiben Handarbeit in der App).
   const c = cfg.campaign;
-  if (c && c.name && !q.get("SELECT 1 FROM campaigns WHERE name = ?", c.name)) {
+  // replace: true → vorhandene, NICHT freigegebene Kampagne gleichen Namens aktualisieren (Texte, KI-Modus, Produkt, Zielgruppe).
+  const existingCampaign = c?.name ? q.get("SELECT * FROM campaigns WHERE name = ?", c.name) : null;
+  if (existingCampaign && c.replace) {
+    if (existingCampaign.approved_at || existingCampaign.status !== "draft") {
+      report.campaign_update = `${c.name}: nicht geändert – bereits freigegeben oder gestartet`;
+    } else {
+      const now = Date.now();
+      if (c.product?.name && existingCampaign.product_id) {
+        q.run("UPDATE products SET name = ?, description = ?, offer = ?, icp = ?, proof = ?, updated_at = ? WHERE id = ?", c.product.name, c.product.description || "", c.product.offer || "", c.product.icp || "", c.product.proof || "", now, existingCampaign.product_id);
+      }
+      if (c.target_group?.name && existingCampaign.target_group_id) {
+        q.run("UPDATE target_groups SET name = ?, description = ?, offer = ?, tone = ?, cta = ?, updated_at = ? WHERE id = ?", c.target_group.name, c.target_group.description || "", c.target_group.offer || "", c.target_group.tone || "", c.target_group.cta || "", now, existingCampaign.target_group_id);
+      }
+      q.run("DELETE FROM campaign_steps WHERE campaign_id = ?", existingCampaign.id);
+      (c.steps || []).forEach((s, i) => insert("campaign_steps", {
+        campaign_id: existingCampaign.id, position: i, delay_days: i === 0 ? 0 : Number(s.delay_days) || 3,
+        variants: JSON.stringify(stepVariants(s))
+      }));
+      q.run("UPDATE campaigns SET ai_mode = ?, ai_instructions = ?, updated_at = ? WHERE id = ?", c.ai_mode || existingCampaign.ai_mode, c.ai_instructions ?? existingCampaign.ai_instructions, now, existingCampaign.id);
+      report.campaign_update = `${c.name}: ${(c.steps || []).length} Mails ersetzt, KI-Modus ${c.ai_mode || existingCampaign.ai_mode}, Entwurf – noch nicht freigegeben`;
+    }
+  }
+  if (report.campaign_update) log("BOOTSTRAP: Kampagne aktualisiert – " + report.campaign_update);
+  if (c && c.name && !existingCampaign) {
     const now = Date.now();
     const projectId = c.project ? q.get("SELECT id FROM projects WHERE name = ?", c.project)?.id ?? null : null;
     let productId = null, groupId = null;
@@ -96,11 +125,11 @@ export async function runBootstrap(raw, log = console.log) {
     const campaignId = insert("campaigns", {
       name: c.name, target_group_id: groupId, product_id: productId, status: "draft", timezone: "Europe/Berlin", days: "1,2,3,4,5",
       window_start: "08:00", window_end: "17:00", daily_limit: Number(c.daily_limit) || 50, legal_basis: c.legal_basis || "consent",
-      mailbox_ids: JSON.stringify(mailboxIds), ramp_enabled: 1, created_at: now, updated_at: now
+      mailbox_ids: JSON.stringify(mailboxIds), ramp_enabled: 1, ai_mode: c.ai_mode || "off", ai_instructions: c.ai_instructions || "", created_at: now, updated_at: now
     });
     (c.steps || []).forEach((s, i) => insert("campaign_steps", {
       campaign_id: campaignId, position: i, delay_days: i === 0 ? 0 : Number(s.delay_days) || 3,
-      variants: JSON.stringify([{ key: "A", subject: s.subject || "", body: s.body || "", enabled: true }])
+      variants: JSON.stringify(stepVariants(s))
     }));
     if (c.list_name) {
       const listId = q.get("SELECT id FROM lead_lists WHERE name = ?", c.list_name)?.id
