@@ -5,6 +5,7 @@
 // Servern, Rechts-Ausschluss und Sperrliste wie bei jedem Lead, Freemail-Adressen nur, wenn die Kontaktregeln es erlauben.
 import { q, tx, insert, update, parseJson } from "../db.js";
 import { getSettings } from "../settings.js";
+import { findPlace, judgePlace, placesEnabled } from "../lib/places.js";
 import { buildQuery, runOverpass, toCandidates } from "../lib/overpass.js";
 import { normalizeEmail, syntaxValid, verifyEmail, isFreemail, isRole } from "../lib/verify.js";
 import { inspectSite } from "./sitecheck.js";
@@ -80,6 +81,8 @@ const PROFILE_BONUS = { growth_os: 1, dealuno: 1, automation: 0, website: 0 };
 
 export const sourcingState = { lastTickAt: null, lastError: null, running: false, lastSummary: null };
 let verifier = verifyEmail;
+let placeFinder = findPlace;
+export function setPlaceFinder(fn) { placeFinder = fn || findPlace; }
 export function setSourcingVerifier(fn) { verifier = fn || verifyEmail; }
 
 // Profil aus dem Projektnamen raten (für die Vorbelegung in der Oberfläche).
@@ -137,8 +140,10 @@ export function qualify(profile, cand, site) {
   const quality = site.quality || { score: 5, issues: [] };
   const issues = quality.issues.join(", ");
   if (profile === "website") {
-    if (quality.score <= 4) return { fit: "A", reason: `Website schwach (${quality.score}/10: ${issues})` };
-    if (quality.score <= 7) return { fit: "B", reason: `Website mittel (${quality.score}/10${issues ? `: ${issues}` : ""})` };
+    const g = site.google?.good ? ", gute Google-Bewertungen" : "";
+    if (quality.score <= 4) return { fit: "A", reason: `Website schwach (${quality.score}/10: ${issues})${g}` };
+    // Gute Google-Bewertungen bei mittelmäßiger Website: Ruf ist da, der Webauftritt hält nicht mit → A.
+    if (quality.score <= 7) return { fit: g ? "A" : "B", reason: `Website mittel (${quality.score}/10${issues ? `: ${issues}` : ""})${g}` };
     return { fit: "C", reason: `Website wirkt aktuell (${quality.score}/10) – eher SEO/GEO-Thema` };
   }
   if (profile === "automation") {
@@ -243,7 +248,8 @@ function importCandidate(run, cand, site, qual, chosen, { person, generic, profi
     mitarbeiter: site.employees?.estimate ? String(site.employees.estimate) : "", groessen_hinweise: (site.employees?.signals || []).join(", "),
     website_qualitaet: `${site.quality.score}/10`, website_hinweise: site.quality.issues.join(", "), anfrage_signale: (site.inquiry?.signals || []).join(", "),
     lob: facts.filter(f => f.type !== "estimate").slice(0, 3).map(f => f.statement).join(" · "),
-    impressum_geprueft: new Date(now).toISOString().slice(0, 10), impressum_quelle: site.imprint?.url || ""
+    impressum_geprueft: new Date(now).toISOString().slice(0, 10), impressum_quelle: site.imprint?.url || "",
+    google_place_id: site.google?.place_id || "", google_bewertungen: site.google?.status || ""
   };
   if (chosen.kind === "guess") { custom.zentrale_email = generic; custom.chef_email_quelle = chosen.reason; }
   else if (["published", "personal"].includes(chosen.kind)) custom.chef_email_quelle = chosen.reason;
@@ -314,6 +320,18 @@ async function processCandidate(run, cand) {
     break;
   }
   if (!chosen) return finish(usable.every(c => q.get("SELECT 1 FROM leads WHERE email = ?", c.email)) ? "duplicate" : "rejected", { reason: "Keine neue, zustellbare Adresse", data: JSON.stringify(siteSummary(site)) });
+  // Google-Bewertungen (nur mit Schlüssel): erst jetzt, damit keine Abfrage für ohnehin aussortierte Firmen anfällt.
+  let google = null;
+  if (placesEnabled()) {
+    let place;
+    try { place = await placeFinder({ name: site.imprint?.company || cand.name, city: cand.city || site.imprint?.address?.city || "", plz: cand.plz || site.imprint?.address?.plz || "", website: site.url || cand.website }); }
+    catch (err) { return finish("error", { reason: err.message }); }
+    google = { ...judgePlace(place, settings), place_id: place.place_id || "" };
+    site.google = google;
+    if (settings.google_require_reviews && ["keine", "nicht gefunden", "geschlossen"].includes(google.status)) {
+      return finish("rejected", { reason: google.status === "geschlossen" ? "Laut Google dauerhaft geschlossen" : google.status === "keine" ? "Keine Google-Bewertungen" : "Bei Google nicht gefunden", data: JSON.stringify(siteSummary(site)) });
+    }
+  }
   const pool = bestPool(run.profile, { ...cand, category_label: label }, site);
   const summary = { ...siteSummary(site), pools: Object.fromEntries(Object.entries(pool.all).map(([k, r]) => [k, r.reject ? `– ${r.reject}` : `${r.fit}: ${r.reason}`])) };
   if (pool.rejected) return finish("rejected", { reason: pool.all[run.profile].reject || pool.all[run.profile].reason, data: JSON.stringify(summary) });

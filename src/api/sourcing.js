@@ -1,4 +1,5 @@
 // API: Leadquellen – Läufe anlegen und steuern, Kandidaten einsehen, Pool je Projekt, Einstellungen.
+import { placesEnabled } from "../lib/places.js";
 import { q, tx, update, parseJson } from "../db.js";
 import { deleteLeadCompletely } from "./leads.js";
 import { fail, v } from "../http.js";
@@ -108,7 +109,7 @@ export function register(r) {
     return {
       profiles: Object.entries(PROFILES).map(([key, p]) => ({ key, label: p.label, description: p.description, categories: p.categories })),
       categories: Object.entries(CATEGORIES).map(([key, c]) => ({ key, label: c.label })),
-      default_regions: s.sourcing_regions, daily: { used: dailyUsed(), limit: s.sourcing_daily_limit }, state: sourcingState,
+      default_regions: s.sourcing_regions, google_places: placesEnabled(), daily: { used: dailyUsed(), limit: s.sourcing_daily_limit }, state: sourcingState,
       projects: listProjects().map(p => {
         const list = poolList(p.id, { create: false });
         return {
@@ -205,8 +206,11 @@ export function register(r) {
     const patch = {};
     if (body.sourcing_daily_limit !== undefined) patch.sourcing_daily_limit = v.int(body.sourcing_daily_limit, { min: 0, max: 20000, name: "Prüfungen pro Tag" });
     if (body.sourcing_regions !== undefined) patch.sourcing_regions = regionList(body.sourcing_regions);
+    if (body.google_require_reviews !== undefined) patch.google_require_reviews = !!body.google_require_reviews;
+    if (body.google_good_count !== undefined) patch.google_good_count = v.int(body.google_good_count, { min: 1, max: 10000, name: "Anzahl Bewertungen" });
+    if (body.google_good_rating !== undefined) patch.google_good_rating = v.num(body.google_good_rating, { min: 1, max: 5, name: "Sterne" });
     saveSettings(patch);
     const s = getSettings();
-    return { sourcing_daily_limit: s.sourcing_daily_limit, sourcing_regions: s.sourcing_regions };
+    return { sourcing_daily_limit: s.sourcing_daily_limit, sourcing_regions: s.sourcing_regions, google_require_reviews: s.google_require_reviews, google_good_count: s.google_good_count, google_good_rating: s.google_good_rating };
   });
 }

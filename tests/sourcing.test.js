@@ -281,7 +281,7 @@ test("API: Meta, Läufe anlegen, Kandidaten, Pause/Weiter, Einstellungen", async
   assert.equal(rejected.total, 2);
   assert.ok(rejected.items[0].data.quality, "Zusammenfassung der Website-Prüfung liegt bei");
   const settings = await api("/api/sourcing/settings", { method: "PUT", body: { sourcing_daily_limit: 500, sourcing_regions: "Köln, Bonn\nKreis Olpe" } });
-  assert.deepEqual(settings.json, { sourcing_daily_limit: 500, sourcing_regions: ["Köln", "Bonn", "Kreis Olpe"] });
+  assert.deepEqual(settings.json, { sourcing_daily_limit: 500, sourcing_regions: ["Köln", "Bonn", "Kreis Olpe"], google_require_reviews: true, google_good_count: 10, google_good_rating: 4.5 });
   const tick = await api("/api/sourcing/tick", { method: "POST" });
   assert.equal(tick.status, 200);
   const del = await api(`/api/sourcing/runs/${created.json.id}`, { method: "DELETE" });

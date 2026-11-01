@@ -108,6 +108,7 @@ Ist das Abo-Limit erreicht, pausiert die KI bis zum Reset: Mails mit KI-Personal
 | `AI_PROVIDER` | nein | `subscription` (Standard mit Token) oder `api`. |
 | `ANTHROPIC_API_KEY` | nein | Nur für `AI_PROVIDER=api`. |
 | `AI_MODEL` | nein | Standard `claude-opus-5-5`. |
+| `GOOGLE_PLACES_API_KEY` | nein | Google Places API (New): Leadquellen prüfen Google-Bewertungen. Ohne Bewertungen → aussortiert, gute Bewertungen + mittlere Website → Qualität A (Leadquellen → Regionen & Limit). Bewertungen werden nicht gespeichert, nur Place ID und Ergebnis. |
 | `TRUST_PROXY` | nein | `true` hinter Coolify/Traefik. |
 | `TRACKING_URL` | nein | Eigene Tracking-Domain (CNAME auf die App). |
 | `COOKIE_SECURE` | nein | `true` lassen (HTTPS). |

@@ -28,6 +28,8 @@ export function loadConfig(env = process.env) {
     anthropicWorkspace: env.ANTHROPIC_WORKSPACE_ID || "",
     // Max-Abo: Token aus `claude setup-token`. Abrechnung über die Nutzungslimits des Abos statt pro Token.
     claudeOauthToken: env.CLAUDE_CODE_OAUTH_TOKEN || "",
+    // Google Places API (New) für die Prüfung der Google-Bewertungen in den Leadquellen.
+    googlePlacesKey: env.GOOGLE_PLACES_API_KEY || "",
     claudeBin: env.CLAUDE_BIN || "claude",
     // subscription | api – Standard: Max-Abo, wenn ein Token gesetzt ist.
     aiProvider: (env.AI_PROVIDER || (env.CLAUDE_CODE_OAUTH_TOKEN ? "subscription" : env.ANTHROPIC_API_KEY ? "api" : "")).toLowerCase(),

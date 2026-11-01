@@ -156,16 +156,21 @@ function openSettings(reload) {
   api("/api/settings").then(s => {
     const limit = input({ type: "number", min: 0, max: 20000, value: s.sourcing_daily_limit ?? 800, style: { maxWidth: "140px" } });
     const regions = textarea({ rows: 8, value: (s.sourcing_regions || []).join("\n") });
+    const gReq = checkbox("Firmen ohne Google-Bewertungen aussortieren", s.google_require_reviews !== false, "Nur aktiv, wenn GOOGLE_PLACES_API_KEY auf dem Server gesetzt ist. Bewertungen werden nicht gespeichert, nur das Ergebnis.");
+    const gCount = input({ type: "number", min: 1, max: 10000, value: s.google_good_count ?? 10, style: { maxWidth: "120px" } });
+    const gRating = input({ type: "number", min: 1, max: 5, step: 0.1, value: s.google_good_rating ?? 4.5, style: { maxWidth: "120px" } });
     const dlg = modal({
       title: "Leadquellen – Regionen & Limit",
       body: h("div", { class: "stack" },
         field("Website-Prüfungen pro Tag", limit, "Jede geprüfte Firma zählt einmal (etwa 5 Seitenabrufe). 0 = kein Limit."),
-        field("Standard-Regionen (eine je Zeile)", regions, "Verwaltungsnamen wie bei OpenStreetMap: „Oberbergischer Kreis“, „Köln“, „Kreis Olpe“, „Rhein-Sieg-Kreis“ …")),
+        field("Standard-Regionen (eine je Zeile)", regions, "Verwaltungsnamen wie bei OpenStreetMap: „Oberbergischer Kreis“, „Köln“, „Kreis Olpe“, „Rhein-Sieg-Kreis“ …"),
+        h("h3", null, "Google-Bewertungen"), gReq,
+        h("div", { class: "grid-2" }, field("„Gute“ Bewertungen ab Anzahl", gCount), field("und ab Sternen", gRating, "Gute Bewertungen + mittlere Website = Qualität A"))),
       footer: [
         h("div", { class: "grow" }),
         h("button", { class: "btn", onclick: () => dlg.close() }, "Abbrechen"),
         h("button", { class: "btn btn-primary", onclick: e => busy(e.currentTarget, async () => {
-          await api("/api/sourcing/settings", { method: "PUT", body: { sourcing_daily_limit: Number(limit.value), sourcing_regions: regions.value } });
+          await api("/api/sourcing/settings", { method: "PUT", body: { sourcing_daily_limit: Number(limit.value), sourcing_regions: regions.value, google_require_reviews: gReq.input.checked, google_good_count: Number(gCount.value), google_good_rating: Number(gRating.value) } });
           toast("Gespeichert"); dlg.close(); reload();
         }) }, "Speichern")
       ]

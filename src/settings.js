@@ -28,6 +28,10 @@ export const DEFAULT_SETTINGS = {
   skip_freemail_cold: true,
   // Chef-Adressen aus Name + Firmenmuster bilden (Leadquellen, Impressum-Suche). Aus = nur wörtlich veröffentlichte Adressen.
   guess_chief_emails: false,
+  // Google-Bewertungen (nur mit GOOGLE_PLACES_API_KEY): ohne Bewertungen aussortieren, „gut“ ab Anzahl + Sterne.
+  google_require_reviews: true,
+  google_good_count: 10,
+  google_good_rating: 4.5,
   // Zusätzliche Ausschluss-Begriffe für Kaltakquise (Komma/Zeile getrennt), zusätzlich zum festen Rechts-Ausschluss.
   cold_exclude_terms: "",
   // Nachfassen-Standard, falls die Kampagne nichts anderes sagt
