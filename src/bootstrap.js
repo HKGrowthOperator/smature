@@ -35,7 +35,7 @@ export async function runBootstrap(raw, log = console.log) {
   if (Array.isArray(cfg.domains)) patch.setup_domains = [...new Set([...(getSettings().setup_domains || []), ...cfg.domains.map(normalizeDomainInput).filter(Boolean)])];
   if (typeof cfg.company_name === "string" && cfg.company_name.trim()) patch.company_name = cfg.company_name.trim();
   // Weitere Einstellungen (nur diese Schlüssel): Regionen der Leadquellen, Prüf-Limit, Adressen bilden.
-  const ALLOWED = ["sourcing_regions", "sourcing_daily_limit", "guess_chief_emails", "skip_freemail_cold"];
+  const ALLOWED = ["sourcing_regions", "sourcing_daily_limit", "guess_chief_emails", "skip_freemail_cold", "footer_text", "privacy_url", "booking_url"];
   for (const k of ALLOWED) if (cfg.settings && cfg.settings[k] !== undefined) patch[k] = cfg.settings[k];
   if (cfg.autopilot_categories && typeof cfg.autopilot_categories === "object") {
     const map = { ...(getSettings().autopilot_categories || {}) };

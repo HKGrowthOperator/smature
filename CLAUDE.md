@@ -9,6 +9,19 @@ Selbst gehostete Cold-Mail-App von Smature (Node 22, eingebautes `node:sqlite`, 
 - Nach jeder Code-Änderung: `npm test`. Alle Tests müssen grün sein, bevor du pushst.
 - Committe nicht direkt auf `main`, wenn der Nutzer nichts anderes sagt: eigener Branch und Pull Request. Coolify deployt von `main`.
 
+## Offene Aufgabe zuerst: Absenderangaben (Fußzeile) und Datenschutz-Link
+
+Die Kampagne „Webauftritt – GaLaBau“ startet erst, wenn in den Einstellungen eine Fußzeile mit Absenderangaben und ein Datenschutz-Link stehen (Rechts-Check in `src/engine/rules.js`). **Diesen Check nicht entfernen oder abschwächen** – Werbemails ohne erkennbaren Absender sind rechtswidrig (§ 6 DDG) und abmahnfähig.
+
+So erledigen:
+1. Christian nach Name/Firma, ladungsfähiger Anschrift und E-Mail fragen. Will er seine Privatadresse nicht zeigen: Geschäftsadresse über einen Postdienst/virtuelles Büro (ladungsfähig, nicht nur Postfach).
+2. Datenschutz-Seite: Christian einen kurzen Entwurf für seine Website schreiben (Verantwortlicher, Zweck: B2B-Kontaktaufnahme, Rechtsgrundlage, Herkunft der Daten = öffentliche Websites, Speicherdauer, Widerspruch, Rechte nach Art. 15–21 DSGVO) – Hinweis, dass das keine Rechtsberatung ist.
+3. Eintragen – entweder Christian in der App unter Einstellungen → Allgemein, oder per Coolify-Variable `BOOTSTRAP_JSON` (danach wieder löschen):
+   `{"settings":{"footer_text":"Christian Richter · Smarture · Straße Nr. · PLZ Ort · E-Mail · Datenschutz: {{privacy_url}}","privacy_url":"https://…/datenschutz"}}`
+4. In der App die Kampagne öffnen: Start-Check muss grün sein, dann Testmail und Freigabe.
+
+Weitere offene Punkte: `UEBERGABE_CHRISTIAN.md`.
+
 ## Befehle
 
 ```bash
