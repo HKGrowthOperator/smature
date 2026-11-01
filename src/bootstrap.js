@@ -53,7 +53,8 @@ export async function runBootstrap(raw, log = console.log) {
     for (const row of mb.rows) {
       const email = String(row.email || "").trim().toLowerCase();
       try {
-        if (q.get("SELECT 1 FROM mailboxes WHERE email = ?", email)) { report.mailboxes.push({ email, result: "existiert bereits" }); continue; }
+        const existing = q.get("SELECT id FROM mailboxes WHERE email = ?", email);
+        if (existing) { created.push({ id: existing.id, email, existed: true }); continue; }
         const name = String(row.from_name || "").trim();
         const signature = name ? ["Beste Grüße", name, [position, company].filter(Boolean).join(" – ")].filter(Boolean).join("\n") : "";
         const data = readMailbox({
@@ -68,10 +69,11 @@ export async function runBootstrap(raw, log = console.log) {
         report.mailboxes.push({ email, result: `Fehler: ${err.message}` });
       }
     }
-    for (const { id, email } of created) {
+    for (const { id, email, existed } of created) {
       const test = await testConnection(getMailbox(id)).catch(err => ({ smtp: { ok: false, error: err.message }, imap: { ok: false, error: err.message } }));
       if (!test.smtp.ok) q.run("UPDATE mailboxes SET last_error = ?, updated_at = ? WHERE id = ?", String(test.smtp.error || "SMTP-Test fehlgeschlagen").slice(0, 500), Date.now(), id);
-      report.mailboxes.push({ email, result: `angelegt · SMTP ${test.smtp.ok ? "ok" : "FEHLER " + test.smtp.error} · IMAP ${test.imap?.ok ? "ok" : "FEHLER " + (test.imap?.error || "")}` });
+      if (test.smtp.ok) q.run("UPDATE mailboxes SET last_error = NULL, updated_at = ? WHERE id = ?", Date.now(), id);
+      report.mailboxes.push({ email, result: `${existed ? "vorhanden" : "angelegt"} · SMTP ${test.smtp.ok ? "ok" : "FEHLER " + test.smtp.error} · IMAP ${test.imap?.ok ? "ok" : "FEHLER " + (test.imap?.error || "")}` });
     }
   }
 
