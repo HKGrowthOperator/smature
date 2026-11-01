@@ -54,7 +54,14 @@ export async function runBootstrap(raw, log = console.log) {
       const email = String(row.email || "").trim().toLowerCase();
       try {
         const existing = q.get("SELECT id FROM mailboxes WHERE email = ?", email);
-        if (existing) { created.push({ id: existing.id, email, existed: true }); continue; }
+        if (existing) {
+          // Vorhandenes Postfach: Passwort und Server aus der Vorgabe übernehmen (z. B. Port 587 statt 465).
+          const cur = getMailbox(existing.id);
+          const upd = readMailbox({ email: cur.email, smtp_host: base.smtp_host, smtp_port: base.smtp_port, smtp_secure: base.smtp_secure, imap_host: base.imap_host, imap_port: base.imap_port, imap_secure: base.imap_secure, smtp_pass: String(row.password || "").replace(/\s+/g, ""), imap_same_pass: true }, cur);
+          q.run("UPDATE mailboxes SET smtp_host = ?, smtp_port = ?, smtp_secure = ?, imap_host = ?, imap_port = ?, imap_secure = ?, smtp_pass = ?, imap_pass = ?, updated_at = ? WHERE id = ?",
+            upd.smtp_host, upd.smtp_port, upd.smtp_secure, upd.imap_host, upd.imap_port, upd.imap_secure, upd.smtp_pass, upd.imap_pass, Date.now(), existing.id);
+          created.push({ id: existing.id, email, existed: true }); continue;
+        }
         const name = String(row.from_name || "").trim();
         const signature = name ? ["Beste Grüße", name, [position, company].filter(Boolean).join(" – ")].filter(Boolean).join("\n") : "";
         const data = readMailbox({

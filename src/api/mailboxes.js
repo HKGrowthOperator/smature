@@ -9,7 +9,7 @@ import { checkDomain } from "../lib/dns-check.js";
 import { newMessageId } from "../mail/compose.js";
 
 export const PROVIDERS = {
-  google: { label: "Google Workspace / Gmail", smtp_host: "smtp.gmail.com", smtp_port: 465, smtp_secure: 1, imap_host: "imap.gmail.com", imap_port: 993, imap_secure: 1, hint: "2-Schritt-Verifizierung aktivieren und ein App-Passwort erstellen (myaccount.google.com → Sicherheit → App-Passwörter)." },
+  google: { label: "Google Workspace / Gmail", smtp_host: "smtp.gmail.com", smtp_port: 587, smtp_secure: 0, imap_host: "imap.gmail.com", imap_port: 993, imap_secure: 1, hint: "2-Schritt-Verifizierung aktivieren und ein App-Passwort erstellen (myaccount.google.com → Sicherheit → App-Passwörter). SMTP über Port 587 (STARTTLS) – Port 465 sperren manche Hoster (z. B. Hetzner)." },
   microsoft: { label: "Microsoft 365 / Outlook", smtp_host: "smtp.office365.com", smtp_port: 587, smtp_secure: 0, imap_host: "outlook.office365.com", imap_port: 993, imap_secure: 1, hint: "Microsoft hat Basic Auth für SMTP/IMAP weitgehend abgeschaltet – funktioniert nur, wenn SMTP AUTH im Tenant noch erlaubt ist." },
   ionos: { label: "IONOS", smtp_host: "smtp.ionos.de", smtp_port: 465, smtp_secure: 1, imap_host: "imap.ionos.de", imap_port: 993, imap_secure: 1, hint: "" },
   strato: { label: "STRATO", smtp_host: "smtp.strato.de", smtp_port: 465, smtp_secure: 1, imap_host: "imap.strato.de", imap_port: 993, imap_secure: 1, hint: "" },
