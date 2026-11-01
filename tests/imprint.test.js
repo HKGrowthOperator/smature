@@ -2,6 +2,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { setupDb, makeLead } from "./helpers.js";
+import { saveSettings } from "../src/settings.js";
 import { createApp } from "../src/app.js";
 import { ensureAdmin } from "../src/auth.js";
 import { q, parseJson } from "../src/db.js";
@@ -12,6 +13,7 @@ let cleanup, server, base, api;
 before(async () => {
   cleanup = setupDb({ ADMIN_EMAIL: "admin@test.de", ADMIN_PASSWORD: "ein-langes-passwort" });
   ensureAdmin();
+  saveSettings({ guess_chief_emails: true }); // die Tests prüfen das Bilden von Adressen
   server = createApp();
   await new Promise(r => server.listen(0, "127.0.0.1", r));
   base = `http://127.0.0.1:${server.address().port}`;
@@ -117,4 +119,17 @@ test("Kontaktseite liefert das Firmen-Muster: Chef-Adresse im selben Format gebi
   assert.equal(lead.verify_status, "risky");
   assert.equal(lead.last_name, "Berger");
   assert.match(parseJson(lead.custom, {}).chef_email_quelle, /Adressmuster der Firma/);
+});
+
+test("Standard: keine Chef-Adresse raten – nur wörtlich veröffentlichte", async () => {
+  saveSettings({ guess_chief_emails: false });
+  try {
+    const { findImprintContact } = await import("../src/intel/imprint.js");
+    if (typeof findImprintContact !== "function") return;
+    setImprintFetcher(async url => ({ url, html: url.includes("impressum") ? "<p>Geschäftsführer: Herr Paul Raten</p><p>E-Mail: info@raten-bau.de</p>" : '<a href="/impressum">Impressum</a>' }));
+    const found = await findImprintContact({ website: "https://raten-bau.de", email: "info@raten-bau.de" });
+    assert.equal(found.guess, null, "ohne Einstellung wird keine Adresse gebildet");
+  } finally {
+    saveSettings({ guess_chief_emails: true });
+  }
 });

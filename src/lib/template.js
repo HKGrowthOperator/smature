@@ -1,7 +1,7 @@
 // Vorlagen: Spintax {Hallo|Hi}, Variablen {{first_name}} mit Fallback {{first_name|Hallo}} und deutsche Anrede.
 import { seededRandom } from "../crypto.js";
 import { leadCase, CASES } from "./cases.js";
-import { observation, observationShort } from "./observations.js";
+import { observation, observationShort, observationConcrete } from "./observations.js";
 
 export const VARIABLES = [
   { key: "anrede", label: "Förmliche Anrede („Sehr geehrter Herr Müller“)" },
@@ -23,6 +23,7 @@ export const VARIABLES = [
   { key: "kit_link", label: "Link zum Info-Kit des Produkts" },
   { key: "kit_name", label: "Bezeichnung des Info-Kits" },
   { key: "ai_first_line", label: "KI-Einstiegssatz (bei KI-Modus „Einstiegssatz“)" },
+  { key: "beobachtung_konkret", label: "Nur belegte Beobachtung zur Website (aus der Leadquellen-Prüfung) – sonst leer; mit {{beobachtung_konkret|}} verwenden" },
   { key: "beobachtung", label: "Beobachtung zur Website des Leads (aus der Leadquellen-Prüfung: Handy, Footer-Jahr, Formular …), sonst ein Satz je Fall" },
   { key: "aufgefallen", label: "Kurzform der Beobachtung für den Betreff („Footer sagt 2019“), leer ohne konkreten Befund" },
   { key: "signal", label: "Beobachtung mit Anfrage-Signalen zuerst (Notdienst, Terminbuchung, offene Stellen) – für Automation" },
@@ -116,6 +117,7 @@ export function buildVars({ lead = {}, mailbox = {}, ai = {}, extra = {}, langua
     ai_first_line: ai.first_line,
     fall: leadCase(lead),
     beobachtung: observation(lead),
+    beobachtung_konkret: observationConcrete(lead),
     aufgefallen: observationShort(lead),
     signal: observation(lead, { prefer: "signals" }),
     signal_kurz: observationShort(lead, { prefer: "signals" })

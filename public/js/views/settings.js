@@ -50,6 +50,7 @@ function drawRules(body, s, save, isAdmin) {
     not_interested_hold_days: input({ type: "number", min: 30, max: 1825, value: s.not_interested_hold_days }),
     company_cap_30d: input({ type: "number", min: 0, max: 50, value: s.company_cap_30d }),
     skip_freemail_cold: checkbox("Kaltakquise nie an Freemail-Adressen (Gmail, GMX, Web.de …)", s.skip_freemail_cold, "Privatpersonen dürfen ohne Einwilligung weder angemailt noch angerufen werden."),
+    guess_chief_emails: checkbox("Chef-Adressen aus Name und Firmenmuster bilden (riskant)", s.guess_chief_emails, "Aus = nur Adressen, die wörtlich auf der Website stehen. Gebildete Adressen sind ungeprüft und als „riskant“ markiert."),
     cold_exclude_terms: textarea({ value: s.cold_exclude_terms || "", rows: 2, placeholder: "z. B. versicherung, makler" }),
     nurture_window_start: input({ type: "time", value: s.nurture_window_start }),
     nurture_window_end: input({ type: "time", value: s.nurture_window_end })
@@ -63,6 +64,7 @@ function drawRules(body, s, save, isAdmin) {
       field("Sperre nach „kein Interesse“ (Tage)", f.not_interested_hold_days, "Abmeldungen sind dauerhaft."),
       field("Max. Kontakte je Firma in 30 Tagen", f.company_cap_30d, "Personen mit derselben Firmen-Domain. 0 = unbegrenzt."), h("div"),
       h("div", { class: "full" }, f.skip_freemail_cold),
+      h("div", { class: "full" }, f.guess_chief_emails),
       h("div", { class: "full" }, field("Weitere Ausschluss-Begriffe für Kaltakquise", f.cold_exclude_terms, "Immer ausgeschlossen: Anwälte, Kanzleien, Notare, Steuerberater, Abmahn- und Verbraucherschutz-Vereine, Datenschutz, Inkasso, Kammern, Behörden und Gerichte. Geprüft werden Firma, Branche, Position, Website und E-Mail. Begriffe mit Komma trennen.")))),
     h("div", { class: "card" }, h("div", { class: "card-head" }, h("h2", null, "Nachfassen bei Interesse")), h("div", { class: "card-body form-grid" },
       h("div", { class: "full field" }, h("span", { class: "label" }, "Wochentage"), h("div", { class: "chips" }, dayChips)),
@@ -70,7 +72,7 @@ function drawRules(body, s, save, isAdmin) {
       h("div", { class: "full hint" }, "Abstand und Anzahl der Nachfass-Mails stellt ihr je Kampagne ein. Gesendet wird nur mit freigegebenen Texten."))),
     h("div", { class: "row" }, h("div", { class: "grow" }), h("button", { class: "btn btn-primary", disabled: !isAdmin, onclick: e => busy(e.currentTarget, () => save({
       cooldown_days: Number(f.cooldown_days.value), not_interested_hold_days: Number(f.not_interested_hold_days.value), company_cap_30d: Number(f.company_cap_30d.value),
-      skip_freemail_cold: f.skip_freemail_cold.input.checked, cold_exclude_terms: f.cold_exclude_terms.value, nurture_window_start: f.nurture_window_start.value, nurture_window_end: f.nurture_window_end.value, nurture_weekdays: [...days].sort()
+      skip_freemail_cold: f.skip_freemail_cold.input.checked, guess_chief_emails: f.guess_chief_emails.input.checked, cold_exclude_terms: f.cold_exclude_terms.value, nurture_window_start: f.nurture_window_start.value, nurture_window_end: f.nurture_window_end.value, nurture_weekdays: [...days].sort()
     })) }, "Speichern"))));
 }
 

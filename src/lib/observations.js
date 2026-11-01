@@ -67,6 +67,12 @@ export function observation(lead, { prefer = "issues" } = {}) {
   return `${two.length === 2 ? "Zwei Dinge sind mir aufgefallen: " : "Eine Sache ist mir aufgefallen: "}${s.charAt(0).toUpperCase()}${s.slice(1)}.`;
 }
 
+// Nur belegte Beobachtungen – ohne den allgemeinen Satz je Fall (leer, wenn nichts Konkretes bekannt ist).
+export function observationConcrete(lead, opts = {}) {
+  const o = observations(lead);
+  return o.issues.length || o.signals.length ? observation(lead, opts) : "";
+}
+
 // Kurzform für den Betreff („Footer sagt 2019“); leer, wenn es nichts Konkretes gibt.
 export function observationShort(lead, { prefer = "issues" } = {}) {
   const o = observations(lead);

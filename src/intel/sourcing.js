@@ -33,7 +33,7 @@ export const CATEGORIES = {
 
 // Profile = ein Pool je Projekt: welche Kategorien gesucht und wie die Firmen bewertet werden.
 export const PROFILES = {
-  website: { label: "Webseite", description: "Betriebe mit schwacher oder alter Website: Handwerk, Werkstätten, Fachhandel, Gastronomie, Vereine, Dienstleister. Je schwächer die Website, desto besser passt der Entwurf-Pitch.", categories: ["craft_all", "shop_auto", "shop_local", "gastro", "leisure", "office_agency", "office_company", "logistics"] },
+  website: { label: "Webseite", description: "Betriebe mit schwacher oder alter Website: Handwerk, Werkstätten, Fachhandel, Gastronomie, Vereine, Dienstleister. Je schwächer die Website, desto besser passt das Angebot.", categories: ["craft_all", "shop_auto", "shop_local", "gastro", "leisure", "office_agency", "office_company", "logistics"] },
   automation: { label: "Webseite / Automation", description: "Betriebe, bei denen Anfragen laufen (Formular, Terminbuchung, Notdienst, viele Leistungen), aber kein Prozess dahinter steht.", categories: ["craft_all", "shop_auto", "shop_local", "gastro", "leisure", "office_agency", "office_company", "logistics"] },
   dealuno: { label: "Sales-Software (B2B)", description: "Agenturen, Berater, Coaches und Dienstleister, die B2B-Kunden gewinnen – kein Handwerk, keine reinen Endkunden-Läden.", categories: ["office_agency", "office_company"] },
   growth_os: { label: "Software Mittelstand", description: "Industrie- und Handwerks-Mittelstand ab etwa 20 Mitarbeitenden mit Auftragsgeschäft: Bau, Technik, Metall, Produktion, Logistik.", categories: ["craft_bau", "craft_technik", "industrial", "office_company", "shop_auto", "logistics"] }
@@ -211,7 +211,7 @@ function emailOptions(cand, site, domain) {
   const published = person ? personalEmailFor(person, found, domains) : null;
   // Chef-Adresse nur bilden, wenn die Firma ihre Domain nachweislich für Mail nutzt (sonst ist jeder Rat ein Bounce), nie für Umlaut-Domains.
   const mailDomain = found.filter(own).map(normalizeDomain)[0] || (cand.email && own(normalizeEmail(cand.email)) ? normalizeDomain(cand.email) : "");
-  const guess = !published && person && mailDomain && !/(^|\.)xn--/.test(mailDomain) ? guessChiefEmail(person, mailDomain, found) : null;
+  const guess = getSettings().guess_chief_emails && !published && person && mailDomain && !/(^|\.)xn--/.test(mailDomain) ? guessChiefEmail(person, mailDomain, found) : null;
   const list = [];
   const push = (email, kind, reason) => { if (email && syntaxValid(email) && !list.some(x => x.email === email)) list.push({ email, kind, reason }); };
   push(published, "published", "Auf der Website veröffentlicht");

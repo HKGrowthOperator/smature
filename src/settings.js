@@ -26,6 +26,8 @@ export const DEFAULT_SETTINGS = {
   not_interested_hold_days: 365,
   company_cap_30d: 3,
   skip_freemail_cold: true,
+  // Chef-Adressen aus Name + Firmenmuster bilden (Leadquellen, Impressum-Suche). Aus = nur wörtlich veröffentlichte Adressen.
+  guess_chief_emails: false,
   // Zusätzliche Ausschluss-Begriffe für Kaltakquise (Komma/Zeile getrennt), zusätzlich zum festen Rechts-Ausschluss.
   cold_exclude_terms: "",
   // Nachfassen-Standard, falls die Kampagne nichts anderes sagt

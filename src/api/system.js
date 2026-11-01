@@ -118,6 +118,7 @@ export function register(r) {
     if (body.auto_classify !== undefined) patch.auto_classify = !!body.auto_classify;
     if (body.booking_prefill !== undefined) patch.booking_prefill = !!body.booking_prefill;
     if (body.skip_freemail_cold !== undefined) patch.skip_freemail_cold = !!body.skip_freemail_cold;
+    if (body.guess_chief_emails !== undefined) patch.guess_chief_emails = !!body.guess_chief_emails;
     if (body.cold_exclude_terms !== undefined) patch.cold_exclude_terms = v.text(body.cold_exclude_terms, { max: 4000, name: "Ausschluss-Begriffe" });
     if (body.cooldown_days !== undefined) patch.cooldown_days = v.int(body.cooldown_days, { min: 0, max: 730, name: "Sperrfrist" });
     if (body.not_interested_hold_days !== undefined) patch.not_interested_hold_days = v.int(body.not_interested_hold_days, { min: 30, max: 1825, name: "Sperre nach „kein Interesse“" });

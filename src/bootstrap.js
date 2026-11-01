@@ -13,6 +13,7 @@ import { getSettings, saveSettings } from "./settings.js";
 import { normalizeDomainInput, SETUP_MODES } from "./setup/status.js";
 import { readMailbox, testConnection, PROVIDERS } from "./api/mailboxes.js";
 import { getMailbox } from "./mail/mailboxes.js";
+import { checkSetupDomain } from "./api/setup.js";
 
 const slugify = s => String(s).toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "projekt";
 
@@ -33,11 +34,18 @@ export async function runBootstrap(raw, log = console.log) {
   if (cfg.main_domain) patch.main_domain = normalizeDomainInput(cfg.main_domain);
   if (Array.isArray(cfg.domains)) patch.setup_domains = [...new Set([...(getSettings().setup_domains || []), ...cfg.domains.map(normalizeDomainInput).filter(Boolean)])];
   if (typeof cfg.company_name === "string" && cfg.company_name.trim()) patch.company_name = cfg.company_name.trim();
+  // Weitere Einstellungen (nur diese Schlüssel): Regionen der Leadquellen, Prüf-Limit, Adressen bilden.
+  const ALLOWED = ["sourcing_regions", "sourcing_daily_limit", "guess_chief_emails", "skip_freemail_cold"];
+  for (const k of ALLOWED) if (cfg.settings && cfg.settings[k] !== undefined) patch[k] = cfg.settings[k];
   if (Object.keys(patch).length) { saveSettings(patch); report.settings = Object.keys(patch); }
 
   for (const slug of cfg.remove_projects || []) {
     const p = q.get("SELECT id, name FROM projects WHERE slug = ?", slug);
     if (p) { q.run("DELETE FROM projects WHERE id = ?", p.id); report.projects_removed.push(p.name); }
+  }
+  for (const proj of cfg.update_projects || []) {
+    const p = q.get("SELECT id FROM projects WHERE name = ?", proj.name);
+    if (p) { q.run("UPDATE projects SET description = ?, updated_at = ? WHERE id = ?", String(proj.description || ""), Date.now(), p.id); report.projects_added.push(`${proj.name} (Beschreibung)`); }
   }
   for (const proj of cfg.add_projects || []) {
     const name = String(proj.name || "").trim();
@@ -105,6 +113,7 @@ export async function runBootstrap(raw, log = console.log) {
         variants: JSON.stringify(stepVariants(s))
       }));
       q.run("UPDATE campaigns SET ai_mode = ?, ai_instructions = ?, updated_at = ? WHERE id = ?", c.ai_mode || existingCampaign.ai_mode, c.ai_instructions ?? existingCampaign.ai_instructions, now, existingCampaign.id);
+      if (c.rename && !q.get("SELECT 1 FROM campaigns WHERE name = ?", c.rename)) q.run("UPDATE campaigns SET name = ? WHERE id = ?", c.rename, existingCampaign.id);
       report.campaign_update = `${c.name}: ${(c.steps || []).length} Mails ersetzt, KI-Modus ${c.ai_mode || existingCampaign.ai_mode}, Entwurf – noch nicht freigegeben`;
     }
   }
@@ -148,6 +157,14 @@ export async function runBootstrap(raw, log = console.log) {
     if (test.smtp.ok) q.run("UPDATE mailboxes SET last_error = NULL, updated_at = ? WHERE id = ?", Date.now(), id);
     const result = `${existed ? "vorhanden" : "angelegt"} · SMTP ${test.smtp.ok ? "ok" : "FEHLER " + test.smtp.error} · IMAP ${test.imap?.ok ? "ok" : "FEHLER " + (test.imap?.error || "")}`;
     log(`BOOTSTRAP: ${email} – ${result}`);
+  }
+
+  for (const d of cfg.check_domains || []) {
+    try {
+      const r = await checkSetupDomain(normalizeDomainInput(d));
+      const bad = r.dns.checks.filter(x => x.status !== "ok").map(x => `${x.label || x.key}: ${x.status}`).join(", ");
+      log(`BOOTSTRAP: DNS ${r.domain} – Wert ${r.dns.score}, Fehler ${r.dns.errors}, Warnungen ${r.dns.warnings}${bad ? ` (${bad})` : ""}`);
+    } catch (err) { log(`BOOTSTRAP: DNS ${d} – Prüfung fehlgeschlagen: ${err.message}`); }
   }
 
   log("BOOTSTRAP: Einstellungen " + (report.settings.join(", ") || "–"));

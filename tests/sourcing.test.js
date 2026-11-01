@@ -64,6 +64,7 @@ let cleanup, server, base, api;
 before(async () => {
   cleanup = setupDb({ ADMIN_EMAIL: "admin@test.de", ADMIN_PASSWORD: "ein-langes-passwort" });
   ensureAdmin();
+  saveSettings({ guess_chief_emails: true }); // die Tests prüfen das Bilden von Adressen
   server = createApp();
   await new Promise(r => server.listen(0, "127.0.0.1", r));
   base = `http://127.0.0.1:${server.address().port}`;

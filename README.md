@@ -185,7 +185,9 @@ Ein Hintergrund-Worker arbeitet alle 20 Sekunden ein Paket ab (eine OpenStreetMa
 | `{{privacy_url}}` | Link zur Datenschutzerklärung (Einstellungen) |
 | `{{mitarbeiter}}` | eigenes Feld aus dem CSV-Import (Spaltenname klein) |
 | `{{sender_name}}`, `{{sender_first_name}}` | Absender des Postfachs |
-| `{{ai_first_line}}` | KI-Einstiegssatz (Kampagnen-Modus „Einstiegssatz“) |
+| `{{ai_first_line}}` | KI-Einstiegssatz (Kampagnen-Modus „Einstiegssatz“). Fällt der Satz durch die Qualitätsprüfung, ist er leer – deshalb als `{{ai_first_line|}}` schreiben, sonst wird der Lead übersprungen. Ohne KI-Zugang warten die Mails. |
+| `{{beobachtung}}` | Beobachtung zur Website aus der Leadquellen-Prüfung; ohne Daten ein allgemeiner Satz je Branche (nie leer) |
+| `{{beobachtung_konkret}}` | Nur belegte Beobachtung, sonst leer – als `{{beobachtung_konkret|}}` schreiben |
 | `{{company\|Ihr Team}}` | Fallback, wenn das Feld leer ist |
 | `{Hallo\|Guten Tag\|Hi}` | Spintax – je Lead eine Variante (Vorschau = Versand) |
 | `{{#fall handwerk,bau}} … {{#fall gastro}} … {{#sonst}} … {{/fall}}` | Fall-Absätze: je Lead bleibt der Zweig stehen, der zu seinem Fall passt (aus Branche, Leadquellen-Kategorie, Branche der alten Sales App oder Firmenname), sonst der `{{#sonst}}`-Zweig. Auch mitten im Satz möglich. Fälle: bau, technik, metall, industrie, logistik, handwerk, werkstatt, laden, gastro, freizeit, praxis, agentur, it, personal, beratung, immobilien, dienstleister, sonst. Der Copy-Check prüft den längsten Zweig. |

@@ -6,6 +6,7 @@ import { fetchPage, extractLinks } from "../lib/website.js";
 import { htmlToText, decodeEntities } from "../lib/text.js";
 import { normalizeEmail, syntaxValid, isRole, isFreemail, domainOf } from "../lib/verify.js";
 import { ensureAccountForLead } from "./accounts.js";
+import { getSettings } from "../settings.js";
 
 let fetcher = fetchPage;
 export function setImprintFetcher(fn) { fetcher = fn || fetchPage; }
@@ -155,7 +156,7 @@ export async function findImprintContact({ website, email }) {
   }
   const emails = [...found].filter(e => domains.includes(domainOf(e)));
   const published = person ? personalEmailFor(person, emails, domains) : null;
-  const guess = !published && person ? guessChiefEmail(person, domains[0], emails) : null;
+  const guess = getSettings().guess_chief_emails && !published && person ? guessChiefEmail(person, domains[0], emails) : null;
   return { url: page.url, people, person, email: published, guess, emails };
 }
 

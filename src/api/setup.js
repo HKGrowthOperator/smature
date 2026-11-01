@@ -33,6 +33,24 @@ function cacheDomain(domain, entry) {
   saveSettings({ setup_domain_cache: cache });
 }
 
+// DNS + Website-Check einer Versand-Domain (Ergebnis wird gemerkt) – auch für die Einrichtung beim Start (bootstrap.js).
+export async function checkSetupDomain(domain, selectorInput) {
+  // Eigener DKIM-Selektor wird gemerkt, damit spätere Prüfungen ihn wieder nutzen.
+  const known = (getSettings().setup_domain_cache || {})[domain]?.selector || "";
+  const selector = String(selectorInput ?? known).trim().replace(/[^a-z0-9._-]/gi, "").slice(0, 63);
+  const [dns, site] = await Promise.all([checkDomain(domain, { extraSelectors: selector ? [selector] : [] }), probeSite(domain).catch(err => ({ reachable: false, error: err.message }))]);
+  const main = normalizeDomainInput(getSettings().main_domain);
+  let redirectHost = "";
+  try { redirectHost = site.redirect ? new URL(site.redirect).hostname.replace(/^www\./, "") : ""; } catch { /* ungültige Location */ }
+  const web = { reachable: !!site.reachable, page: !!site.page, redirect: site.redirect || null, redirects_to_main: !!(main && redirectHost && (redirectHost === main || redirectHost.endsWith(`.${main}`))) };
+  const entry = {
+    dns: { score: dns.score, errors: dns.checks.filter(c => c.status === "error").length, warnings: dns.checks.filter(c => c.status === "warn").length, checks: dns.checks },
+    web, selector, checked_at: Date.now()
+  };
+  cacheDomain(domain, entry);
+  return { domain, ...entry };
+}
+
 export function register(r) {
   r.get("/api/setup", () => setupStatus());
 
@@ -62,20 +80,7 @@ export function register(r) {
   r.post("/api/setup/check-domain", async ({ body }) => {
     const domain = normalizeDomainInput(body.domain);
     if (!domain) fail(400, "Ungültige Domain");
-    // Eigener DKIM-Selektor wird gemerkt, damit spätere Prüfungen ihn wieder nutzen.
-    const known = (getSettings().setup_domain_cache || {})[domain]?.selector || "";
-    const selector = String(body.selector ?? known).trim().replace(/[^a-z0-9._-]/gi, "").slice(0, 63);
-    const [dns, site] = await Promise.all([checkDomain(domain, { extraSelectors: selector ? [selector] : [] }), probeSite(domain).catch(err => ({ reachable: false, error: err.message }))]);
-    const main = normalizeDomainInput(getSettings().main_domain);
-    let redirectHost = "";
-    try { redirectHost = site.redirect ? new URL(site.redirect).hostname.replace(/^www\./, "") : ""; } catch { /* ungültige Location */ }
-    const web = { reachable: !!site.reachable, page: !!site.page, redirect: site.redirect || null, redirects_to_main: !!(main && redirectHost && (redirectHost === main || redirectHost.endsWith(`.${main}`))) };
-    const entry = {
-      dns: { score: dns.score, errors: dns.checks.filter(c => c.status === "error").length, warnings: dns.checks.filter(c => c.status === "warn").length, checks: dns.checks },
-      web, selector, checked_at: Date.now()
-    };
-    cacheDomain(domain, entry);
-    return { domain, ...entry };
+    return checkSetupDomain(domain, body.selector);
   });
 
   // Mehrere Postfächer auf einmal anlegen (z. B. 10 Postfächer bei ALL-INKL) – mit Verbindungstest, Warmup und Signatur.
