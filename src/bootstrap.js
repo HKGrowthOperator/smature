@@ -44,12 +44,12 @@ export async function runBootstrap(raw, log = console.log) {
   }
 
   const mb = cfg.mailboxes;
+  const created = [];
   if (mb && Array.isArray(mb.rows)) {
     const provider = PROVIDERS[mb.provider] ? mb.provider : "custom";
     const base = { ...PROVIDERS[provider], ...(mb.smtp_host ? { smtp_host: mb.smtp_host, imap_host: mb.imap_host || mb.smtp_host } : {}) };
     const company = getSettings().company_name || "";
     const position = String(mb.position || "");
-    const created = [];
     for (const row of mb.rows) {
       const email = String(row.email || "").trim().toLowerCase();
       try {
@@ -69,17 +69,54 @@ export async function runBootstrap(raw, log = console.log) {
         report.mailboxes.push({ email, result: `Fehler: ${err.message}` });
       }
     }
-    for (const { id, email, existed } of created) {
-      const test = await testConnection(getMailbox(id)).catch(err => ({ smtp: { ok: false, error: err.message }, imap: { ok: false, error: err.message } }));
-      if (!test.smtp.ok) q.run("UPDATE mailboxes SET last_error = ?, updated_at = ? WHERE id = ?", String(test.smtp.error || "SMTP-Test fehlgeschlagen").slice(0, 500), Date.now(), id);
-      if (test.smtp.ok) q.run("UPDATE mailboxes SET last_error = NULL, updated_at = ? WHERE id = ?", Date.now(), id);
-      report.mailboxes.push({ email, result: `${existed ? "vorhanden" : "angelegt"} · SMTP ${test.smtp.ok ? "ok" : "FEHLER " + test.smtp.error} · IMAP ${test.imap?.ok ? "ok" : "FEHLER " + (test.imap?.error || "")}` });
+  }
+
+  // Produkt + Zielgruppe + Kampagne (Entwurf, NICHT freigegeben – Freigabe und Start bleiben Handarbeit in der App).
+  const c = cfg.campaign;
+  if (c && c.name && !q.get("SELECT 1 FROM campaigns WHERE name = ?", c.name)) {
+    const now = Date.now();
+    const projectId = c.project ? q.get("SELECT id FROM projects WHERE name = ?", c.project)?.id ?? null : null;
+    let productId = null, groupId = null;
+    if (c.product?.name) {
+      productId = q.get("SELECT id FROM products WHERE name = ?", c.product.name)?.id
+        ?? insert("products", { name: c.product.name, description: c.product.description || "", offer: c.product.offer || "", icp: c.product.icp || "", proof: c.product.proof || "", booking_url: c.product.booking_url || "", project_id: projectId, created_at: now, updated_at: now });
     }
+    if (c.target_group?.name) {
+      groupId = q.get("SELECT id FROM target_groups WHERE name = ?", c.target_group.name)?.id
+        ?? insert("target_groups", { name: c.target_group.name, description: c.target_group.description || "", offer: c.target_group.offer || "", tone: c.target_group.tone || "", cta: c.target_group.cta || "", language: "de", project_id: projectId, created_at: now, updated_at: now });
+    }
+    const mailboxIds = q.all("SELECT id FROM mailboxes WHERE status = 'active' ORDER BY id").map(m => m.id);
+    const campaignId = insert("campaigns", {
+      name: c.name, target_group_id: groupId, product_id: productId, status: "draft", timezone: "Europe/Berlin", days: "1,2,3,4,5",
+      window_start: "08:00", window_end: "17:00", daily_limit: Number(c.daily_limit) || 50, legal_basis: c.legal_basis || "consent",
+      mailbox_ids: JSON.stringify(mailboxIds), ramp_enabled: 1, created_at: now, updated_at: now
+    });
+    (c.steps || []).forEach((s, i) => insert("campaign_steps", {
+      campaign_id: campaignId, position: i, delay_days: i === 0 ? 0 : Number(s.delay_days) || 3,
+      variants: JSON.stringify([{ key: "A", subject: s.subject || "", body: s.body || "", enabled: true }])
+    }));
+    if (c.list_name) {
+      const listId = q.get("SELECT id FROM lead_lists WHERE name = ?", c.list_name)?.id
+        ?? insert("lead_lists", { name: c.list_name, target_group_id: groupId, project_id: projectId, created_at: now });
+      report.list = c.list_name + ` (#${listId})`;
+    }
+    report.campaign = `${c.name} (#${campaignId}, ${(c.steps || []).length} Mails, ${mailboxIds.length} Postfächer, Entwurf – noch nicht freigegeben)`;
+  }
+  if (report.campaign) log("BOOTSTRAP: Kampagne " + report.campaign + (report.list ? ` · Liste ${report.list}` : ""));
+
+  log("BOOTSTRAP: Postfächer werden getestet …");
+  for (const { id, email, existed } of created) {
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("Zeitüberschreitung (45 s)")), 45000));
+    const test = await Promise.race([testConnection(getMailbox(id)), timeout]).catch(err => ({ smtp: { ok: false, error: err.message }, imap: { ok: false, error: err.message } }));
+    if (!test.smtp.ok) q.run("UPDATE mailboxes SET last_error = ?, updated_at = ? WHERE id = ?", String(test.smtp.error || "SMTP-Test fehlgeschlagen").slice(0, 500), Date.now(), id);
+    if (test.smtp.ok) q.run("UPDATE mailboxes SET last_error = NULL, updated_at = ? WHERE id = ?", Date.now(), id);
+    const result = `${existed ? "vorhanden" : "angelegt"} · SMTP ${test.smtp.ok ? "ok" : "FEHLER " + test.smtp.error} · IMAP ${test.imap?.ok ? "ok" : "FEHLER " + (test.imap?.error || "")}`;
+    log(`BOOTSTRAP: ${email} – ${result}`);
   }
 
   log("BOOTSTRAP: Einstellungen " + (report.settings.join(", ") || "–"));
   log("BOOTSTRAP: Projekte entfernt " + (report.projects_removed.join(", ") || "–") + " · angelegt " + (report.projects_added.join(", ") || "–"));
-  for (const m of report.mailboxes) log(`BOOTSTRAP: ${m.email} – ${m.result}`);
+  for (const m of report.mailboxes) log(`BOOTSTRAP: ${m.email} – ${m.result}`); // nur Fehler beim Anlegen
   log("BOOTSTRAP fertig – Variable BOOTSTRAP_JSON jetzt wieder entfernen.");
   return report;
 }
