@@ -1,5 +1,6 @@
 // Einstiegspunkt: Konfiguration laden, Datenbank öffnen, HTTP-Server und Hintergrund-Jobs starten.
-import { mkdirSync } from "node:fs";
+import { mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { loadConfig, validateConfig, config } from "./config.js";
 import { openDb, closeDb } from "./db.js";
@@ -12,6 +13,21 @@ import { startSourcing, stopSourcing } from "./intel/sourcing.js";
 import { startAutopilot, stopAutopilot } from "./engine/autopilot.js";
 
 loadConfig();
+// Ohne APP_SECRET: Schlüssel einmal erzeugen und im Daten-Volume speichern (bleibt bei jedem Neustart gleich).
+// Ein gesetztes APP_SECRET hat immer Vorrang.
+if (!config.appSecret || config.appSecret.length < 32) {
+  const file = join(config.dataDir, ".app-secret");
+  try {
+    mkdirSync(config.dataDir, { recursive: true });
+    if (!existsSync(file)) {
+      writeFileSync(file, randomBytes(48).toString("base64"), { mode: 0o600 });
+      console.warn(`APP_SECRET nicht gesetzt – neuer Schlüssel erzeugt und in ${file} gespeichert. Das Volume ${config.dataDir} muss dauerhaft sein, sonst gehen die Postfach-Passwörter beim nächsten Deploy verloren.`);
+    }
+    config.appSecret = readFileSync(file, "utf8").trim();
+  } catch (err) {
+    console.error(`APP_SECRET konnte nicht in ${file} gespeichert werden: ${err.message}`);
+  }
+}
 const problems = validateConfig();
 if (problems.length) {
   console.error("Konfiguration unvollständig:\n- " + problems.join("\n- "));
