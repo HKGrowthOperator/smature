@@ -62,5 +62,5 @@ Die vier Start-Projekte (Webseite, Software Sales App, Software Mittelstand, Web
 ## Betrieb
 
 - Einrichtung und alle Felder zum Ausfüllen: `README.md` und `VORLAGEN.md`.
-- Deploy: Coolify, Dockerfile, Port 3000, Volume `/app/data`. Startet der Container nicht, im Container-Log nach „Konfiguration unvollständig“ suchen.
+- Deploy: Coolify, Dockerfile, Port 80, Volume `/app/data`. Startet der Container nicht, im Container-Log nach „Konfiguration unvollständig“ suchen.
 - KI: `CLAUDE_CODE_OAUTH_TOKEN` (aus `claude setup-token`) in Coolify. Ohne Token läuft die App, nur ohne KI.

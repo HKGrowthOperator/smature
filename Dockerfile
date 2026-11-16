@@ -14,8 +14,8 @@ COPY src ./src
 COPY public ./public
 RUN mkdir -p /app/data && chown -R node:node /app
 USER node
-ENV PORT=3000 DATA_DIR=/app/data
+ENV PORT=80 DATA_DIR=/app/data
 VOLUME ["/app/data"]
-EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s CMD node -e "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||80)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "--disable-warning=ExperimentalWarning", "src/server.js"]

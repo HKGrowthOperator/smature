@@ -6,7 +6,7 @@
 
 **Variante A – Coolify (empfohlen, mit HTTPS):**
 
-1. Coolify → Neue Ressource → *Public Repository* `https://github.com/HKGrowthOperator/smature`, Build Pack **Dockerfile**, Port **3000**.
+1. Coolify → Neue Ressource → *Public Repository* `https://github.com/HKGrowthOperator/smature`, Build Pack **Dockerfile**, Port **80**.
 2. Domain eintragen, z. B. `https://coldmail.smature.de` (A-Record auf den Server).
 3. **Persistent Storage:** Volume nach `/app/data` (dort liegt die Datenbank).
 4. Umgebungsvariablen setzen (Vorlage: `.env.example`):
@@ -22,7 +22,7 @@
 ```bash
 git clone https://github.com/HKGrowthOperator/smature && cd smature
 cp .env.example .env   # Werte eintragen (siehe oben)
-docker compose up -d   # App läuft auf Port 3000 – HTTPS über einen Reverse Proxy davor
+docker compose up -d   # App läuft auf Port 80 – HTTPS über einen Reverse Proxy davor
 ```
 
 **Variante C – nur lokal ausprobieren:** `npm install && npm run dev` → http://localhost:3000, Login `admin@localhost.test` / `local-dev-password`.
@@ -95,7 +95,7 @@ Ist das Abo-Limit erreicht, pausiert die KI bis zum Reset: Mails mit KI-Personal
 
 ## Deployment mit Coolify (wie die Website)
 
-1. Neue Ressource → Repository `HKGrowthOperator/smature`, Build Pack **Dockerfile**, **Port 3000**, HTTPS-Domain verbinden (z. B. `coldmail.example.de`).
+1. Neue Ressource → Repository `HKGrowthOperator/smature`, Build Pack **Dockerfile**, **Port 80**, HTTPS-Domain verbinden (z. B. `coldmail.example.de`).
 2. **Persistentes Volume nach `/app/data`** (SQLite-Datenbank mit Leads, Nachrichten, Wissen).
 3. Umgebungsvariablen (siehe `.env.example`):
 
@@ -121,7 +121,7 @@ Ist das Abo-Limit erreicht, pausiert die KI bis zum Reset: Mails mit KI-Personal
 | Symptom | Ursache / Lösung |
 | --- | --- |
 | `no available server` bzw. 503 | Traefik kennt die Domain, aber kein gesunder Container läuft. Deployment-Log und Container-Log in Coolify öffnen. Häufig: `Konfiguration unvollständig` → `APP_SECRET` fehlt/kürzer als 32 Zeichen, `ADMIN_PASSWORD` kürzer als 12 Zeichen, `APP_URL` fehlt. Oder der Build läuft noch (das Image installiert Claude Code, dauert einige Minuten). |
-| Container startet neu / „unhealthy“ | Der Healthcheck ruft `http://127.0.0.1:3000/healthz` im Container auf – **Ports Exposes = 3000** lassen, `PORT` nicht überschreiben. |
+| Container startet neu / „unhealthy“ | Der Healthcheck ruft `http://127.0.0.1:80/healthz` im Container auf – **Ports Exposes = 80** lassen, `PORT` nicht überschreiben. |
 | `EACCES` auf `/app/data` | Der Container läuft als Benutzer `node` (UID 1000). Ein **Docker-Volume** verwenden oder beim Bind-Mount den Ordner `chown 1000:1000`. |
 | Zertifikatsfehler direkt nach dem Anlegen | Let's Encrypt stellt das Zertifikat erst aus, wenn der Container gesund ist und DNS (A-Record auf den Server) stimmt – nach dem ersten erfolgreichen Start kurz warten. Domain in Coolify mit `https://` eintragen. |
 | Login klappt, Sitzung geht sofort verloren | `COOKIE_SECURE=true` braucht HTTPS; hinter Coolify `TRUST_PROXY=true` setzen. |
