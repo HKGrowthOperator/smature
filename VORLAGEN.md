@@ -20,7 +20,7 @@ CLAUDE_CODE_OAUTH_TOKEN=‹Token›
 AI_PROVIDER=subscription
 ```
 
-Außerdem: Port **3000**, Persistent Storage nach **`/app/data`**. Danach neu deployen und `https://‹app-domain›/healthz` öffnen → `{"ok":true}`.
+Außerdem: Port **80**, Persistent Storage nach **`/app/data`**. Danach neu deployen und `https://‹app-domain›/healthz` öffnen → `{"ok":true}`.
 
 ---
 
